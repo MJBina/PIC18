@@ -1,0 +1,366 @@
+
+# 1 "../dsPIC30_serial.c"
+
+# 13 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\stdint.h"
+typedef signed char int8_t;
+
+# 20
+typedef signed int int16_t;
+
+# 28
+typedef signed short long int int24_t;
+
+# 36
+typedef signed long int int32_t;
+
+# 43
+typedef unsigned char uint8_t;
+
+# 49
+typedef unsigned int uint16_t;
+
+# 56
+typedef unsigned short long int uint24_t;
+
+# 63
+typedef unsigned long int uint32_t;
+
+# 71
+typedef signed char int_least8_t;
+
+# 78
+typedef signed int int_least16_t;
+
+# 90
+typedef signed short long int int_least24_t;
+
+# 98
+typedef signed long int int_least32_t;
+
+# 105
+typedef unsigned char uint_least8_t;
+
+# 111
+typedef unsigned int uint_least16_t;
+
+# 121
+typedef unsigned short long int uint_least24_t;
+
+# 128
+typedef unsigned long int uint_least32_t;
+
+# 137
+typedef signed char int_fast8_t;
+
+# 144
+typedef signed int int_fast16_t;
+
+# 156
+typedef signed short long int int_fast24_t;
+
+# 164
+typedef signed long int int_fast32_t;
+
+# 171
+typedef unsigned char uint_fast8_t;
+
+# 177
+typedef unsigned int uint_fast16_t;
+
+# 187
+typedef unsigned short long int uint_fast24_t;
+
+# 194
+typedef unsigned long int uint_fast32_t;
+
+# 200
+typedef int32_t intmax_t;
+
+
+
+
+typedef uint32_t uintmax_t;
+
+
+
+
+typedef int16_t intptr_t;
+
+
+
+
+typedef uint16_t uintptr_t;
+
+# 39 "../dsPIC30_serial.h"
+extern int16_t _serial_getchar(void);
+
+extern void _serial_Config(void);
+
+extern void _serial_Start(void);
+
+extern int16_t _serial_TxBuf( unsigned char *data, int len );
+
+extern int16_t _serial_TxBE(void);
+
+extern int16_t _serial_getc(void);
+
+extern int16_t _serial_putc(char ch);
+
+
+
+
+extern int16_t _serial_printf(char * fmt, ...);
+
+# 4 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\__size_t.h"
+typedef unsigned size_t;
+
+# 7 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\stdarg.h"
+typedef void * va_list[1];
+
+#pragma intrinsic(__va_start)
+extern void * __va_start(void);
+
+#pragma intrinsic(__va_arg)
+extern void * __va_arg(void *, ...);
+
+# 43 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\stdio.h"
+struct __prbuf
+{
+char * ptr;
+void (* func)(char);
+};
+
+# 29 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\errno.h"
+extern int errno;
+
+# 12 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\conio.h"
+extern void init_uart(void);
+
+extern char getch(void);
+extern char getche(void);
+extern void putch(char);
+extern void ungetch(char);
+
+extern __bit kbhit(void);
+
+# 23
+extern char * cgets(char *);
+extern void cputs(const char *);
+
+# 88 "C:\Program Files (x86)\Microchip\xc8\v1.44\include\stdio.h"
+extern int cprintf(char *, ...);
+#pragma printf_check(cprintf)
+
+
+
+extern int _doprnt(struct __prbuf *, const register char *, register va_list);
+
+
+# 180
+#pragma printf_check(vprintf) const
+#pragma printf_check(vsprintf) const
+
+extern char * gets(char *);
+extern int puts(const char *);
+extern int scanf(const char *, ...) __attribute__((unsupported("scanf() is not supported by this compiler")));
+extern int sscanf(const char *, const char *, ...) __attribute__((unsupported("sscanf() is not supported by this compiler")));
+extern int vprintf(const char *, va_list) __attribute__((unsupported("vprintf() is not supported by this compiler")));
+extern int vsprintf(char *, const char *, va_list) __attribute__((unsupported("vsprintf() is not supported by this compiler")));
+extern int vscanf(const char *, va_list ap) __attribute__((unsupported("vscanf() is not supported by this compiler")));
+extern int vsscanf(const char *, const char *, va_list) __attribute__((unsupported("vsscanf() is not supported by this compiler")));
+
+#pragma printf_check(printf) const
+#pragma printf_check(sprintf) const
+extern int sprintf(char *, const char *, ...);
+extern int printf(const char *, ...);
+
+# 69 "../dsPIC30_serial.c"
+uint8_t TxBuf[0x020];
+
+
+
+uint8_t RxBuf[0x010];
+
+
+typedef struct tagFIFOBUF
+{
+uint8_t * buf;
+uint16_t ofst;
+int16_t head;
+int16_t tail;
+int16_t free_space;
+} FIFOBUF_t;
+
+FIFOBUF_t TxFifo;
+FIFOBUF_t RxFifo;
+
+# 94
+void __attribute__ ((interrupt, no_auto_psv)) _U2RXInterrupt(void)
+{
+*((uint8_t *)(RxFifo.buf + RxFifo.tail++)) = U2RXREG;
+RxFifo.tail &= 0x00F;
+RxFifo.free_space--;
+IFS1bits.U2RXIF = 0;
+}
+
+# 108
+void __attribute__ ((interrupt, no_auto_psv)) _U2TXInterrupt(void)
+{
+IFS1bits.U2TXIF = 0;
+
+
+if ( 0x020 == TxFifo.free_space )
+{
+return;
+}
+
+# 123
+while (( 0x020 > TxFifo.free_space ) && (U2STAbits.UTXBF == 0))
+{
+U2STAbits.UTXEN = 1;
+U2TXREG = (uint8_t)*((uint8_t *)(TxFifo.buf + TxFifo.head++));
+TxFifo.head &= 0x01F;
+TxFifo.free_space++;
+}
+}
+
+# 137
+void _serial_Config(void)
+{
+
+TxFifo.buf = &TxBuf[0];
+TxFifo.ofst = 0;
+TxFifo.tail = TxFifo.head = 0;
+TxFifo.free_space = 0x020;
+
+RxFifo.buf = &RxBuf[0];
+RxFifo.ofst = 0;
+RxFifo.tail = RxFifo.head = 0;
+RxFifo.free_space = 0x010;
+
+# 181
+U2MODEbits.PDSEL = 0;
+U2MODEbits.STSEL = 0;
+
+# 214
+U2BRG = 15;
+
+# 224
+U2STAbits.UTXISEL = 1;
+
+U2STAbits.URXISEL = 1;
+
+return;
+}
+
+# 237
+void _serial_Start(void)
+{
+
+IFS1bits.U2TXIF = 0;
+IFS1bits.U2RXIF = 0;
+
+
+IEC1bits.U2TXIE = 1;
+IEC1bits.U2RXIE = 1;
+
+
+
+
+U2MODEbits.UARTEN = 1;
+
+return;
+}
+
+# 261
+int16_t _serial_TxBuf( unsigned char *data, int len )
+{
+int i;
+
+
+if (len > TxFifo.free_space)
+{
+return(ERR_BUF_FULL);
+}
+
+for(i=0; i<len; i++)
+{
+*((uint8_t *)(TxFifo.buf + TxFifo.tail++)) = *data++;
+TxFifo.tail &= 0x01F;
+TxFifo.free_space--;
+}
+
+
+if ( U2STAbits.TRMT == 1)
+{
+IFS1bits.U2TXIF = 1;
+}
+
+return(SUCCESS);
+}
+
+# 298
+int16_t _serial_printf (char * fmt, ...)
+{
+char buf[256];
+va_list args;
+int len;
+
+
+*args = __va_start();
+len = vsprintf (buf, fmt, args);
+if (len > 0 )
+{
+if (SUCCESS != _serial_TxBuf ((unsigned char *)buf, len));
+{
+len = -1;
+}
+}
+;
+
+return(len);
+}
+
+# 330
+int16_t _serial_getc(void)
+{
+static int16_t ch;
+
+
+if ( 0x010 == RxFifo.free_space )
+{
+return((-1));
+}
+
+ch = (int16_t)*((uint8_t *)(RxFifo.buf + RxFifo.head++));
+RxFifo.head &= 0x00F;
+RxFifo.free_space++;
+return(ch);
+}
+
+# 354
+int16_t _serial_TxBE(void)
+{
+if(0x020 == TxFifo.free_space ){
+return(1);
+}
+return(0);
+}
+
+# 372
+int16_t _serial_putc(char ch)
+{
+if (1 > TxFifo.free_space)
+{
+return((-1));
+}
+
+*((uint8_t *)(TxFifo.buf + TxFifo.tail++)) = (int16_t)ch;
+TxFifo.tail &= 0x01F;
+TxFifo.free_space--;
+
+IFS1bits.U2TXIF = 1;
+
+return(ch);
+}
+

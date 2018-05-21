@@ -1,0 +1,14 @@
+C:\MCHPFSUSB\fw\Boot\main.c
+C:\MCHPFSUSB\fw\Boot\system\usb\usbmmap.c
+C:\MCHPFSUSB\fw\Boot\system\usb\usbdrv\usbdrv.c
+C:\MCHPFSUSB\fw\Boot\system\usb\usb9\usb9.c
+C:\MCHPFSUSB\fw\Boot\autofiles\usbdsc.c
+C:\MCHPFSUSB\fw\Boot\system\usb\usbctrltrf\usbctrltrf.c
+C:\MCHPFSUSB\fw\Boot\system\usb\class\boot\boot.c
+C:\MCHPFSUSB\fw\Boot\io_cfg.h
+C:\MCHPFSUSB\fw\Boot\system\usb\usbmmap.h
+C:\MCHPFSUSB\fw\Boot\autofiles\usbcfg.h
+C:\MCHPFSUSB\fw\Boot\system\usb\usb.h
+C:\MCHPFSUSB\fw\Boot\system\typedefs.h
+C:\MCHPFSUSB\fw\Boot\autofiles\usbdsc.h
+C:\MCHPFSUSB\fw\Boot\system\usb\class\boot\boot.h
